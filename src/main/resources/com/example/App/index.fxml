@@ -7,7 +7,7 @@
 <Pane fx:id="MainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/17.0.6" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.App.Controller">
    <children>
       <Button fx:id="ShuffleBtn" layoutX="124.0" layoutY="747.0" mnemonicParsing="false" onMouseClicked="#shuffleBtnClicked" prefHeight="25.0" prefWidth="70.0" text="Shuffle" />
-      <Slider fx:id="CountSlider" layoutX="32.0" layoutY="694.0" majorTickUnit="15.0" min="10.0" minorTickCount="1" onMouseReleased="#countSliderMouseRelease" prefHeight="37.0" prefWidth="162.0" showTickLabels="true" showTickMarks="true" value="25.0" />
+      <Slider fx:id="CountSlider" layoutX="32.0" layoutY="694.0" majorTickUnit="15.0" max="2000.0" min="10.0" minorTickCount="1" onMouseReleased="#countSliderMouseRelease" prefHeight="37.0" prefWidth="162.0" showTickLabels="true" showTickMarks="true" value="25.0" />
       <Button fx:id="SortBtn" layoutX="32.0" layoutY="747.0" mnemonicParsing="false" onMouseClicked="#sortBtnClicked" prefHeight="25.0" prefWidth="70.0" text="Sort" />
       <Pane fx:id="ViewPane" layoutX="15.0" layoutY="14.0" prefHeight="650.0" prefWidth="970.0" />
    </children>

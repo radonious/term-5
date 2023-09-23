@@ -5,25 +5,40 @@ import com.example.App.Controller;
 import java.util.ArrayList;
 
 public class Sorter {
-    public ArrayList<Integer> sort(ArrayList<Integer> arr) {
-        // Init
-        ArrayList<ArrayList<Integer>> pockets = new ArrayList<>(10);
-        for(int i=0; i < 10; i++) {
-            pockets.add(new ArrayList());
-        }
-        // Sort
-        for (int i = 0; i < maxCountOfDigits(arr); ++i) {
-            for (Integer num : arr) {
-                pockets.get(getDigit(num, i)).add(num);
+    private ArrayList<Integer> data;
+    private ArrayList<ArrayList<Integer>> pockets;
+    private int curr_index;
+    private int max_index;
+
+    public boolean nextStep() {
+        if (curr_index < max_index) {
+            for (Integer num : data) {
+                pockets.get(getDigit(num, curr_index)).add(num);
             }
-            arr.clear();
+            data.clear();
             for (ArrayList<Integer> pocket : pockets) {
-                arr.addAll(pocket);
+                data.addAll(pocket);
                 pocket.clear();
             }
+            curr_index++;
+            return true;
+        } else {
+            return false;
         }
-        // Return
-        return arr;
+    }
+
+    public ArrayList<Integer> getData() {
+        return data;
+    }
+
+    public void sortStart(ArrayList<Integer> arr) {
+        curr_index = 0;
+        max_index = maxCountOfDigits(arr);
+        data = arr;
+        pockets = new ArrayList<>(10);
+        for (int i = 0; i < 10; i++) {
+            pockets.add(new ArrayList());
+        }
     }
 
     private int getDigit(int num, int k) {
@@ -52,9 +67,9 @@ public class Sorter {
         return res;
     }
 
-    public void print(ArrayList<Integer> arr) {
-        for (int i = 0; i <arr.size(); ++i) {
-            System.out.printf("%s ", arr.get(i));
+    public void print() {
+        for (int i = 0; i < data.size(); ++i) {
+            System.out.printf("%s ", data.get(i));
         }
         System.out.println();
     }

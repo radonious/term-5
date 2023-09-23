@@ -1,6 +1,7 @@
 package com.example.App;
 
 import com.example.Backend.Sorter;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
@@ -8,20 +9,16 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberTickUnit;
-import org.jfree.chart.axis.TickUnitSource;
-import org.jfree.chart.axis.TickUnits;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.fx.ChartViewer;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.category.AbstractCategoryItemRenderer;
-import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.xy.XYBarRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Controller extends Pane {
@@ -55,10 +52,9 @@ public class Controller extends Pane {
         for (int i = 0; i < (int) CountSlider.getValue(); ++i) {
             chart_data.add(i, data.get(i));
         }
-
         XYSeriesCollection dataset = new XYSeriesCollection();
         dataset.addSeries(chart_data);
-        JFreeChart chart = ChartFactory.createHistogram("", "", "", dataset);
+        JFreeChart chart = ChartFactory.createHistogram("Radix Sort (LSD)", "", "", dataset);
         ValueAxis xAxis = chart.getXYPlot().getDomainAxis();
         xAxis.setRange(-0.5, (int) CountSlider.getValue() - 0.5);
         XYBarRenderer br = (XYBarRenderer) chart.getXYPlot().getRenderer();
@@ -71,6 +67,7 @@ public class Controller extends Pane {
     private void render() {
         ChartViewer viewer = new ChartViewer(createChart());
         viewer.setPrefSize(ViewPane.getPrefWidth(), ViewPane.getPrefHeight());
+        ViewPane.getChildren().clear();
         ViewPane.getChildren().add(viewer);
     }
 
@@ -108,10 +105,26 @@ public class Controller extends Pane {
     }
 
     @FXML
-    void sortBtnClicked(MouseEvent event) {
+    void sortBtnClicked(MouseEvent event) throws InterruptedException {
         Sorter sorter = new Sorter();
-        data = sorter.sort(data);
-        render();
+        sorter.sortStart(data);
+
+        Timer timer = new Timer();
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                if (!sorter.nextStep()) {
+                    timer.cancel();
+                }
+                Platform.runLater(() -> {
+                    sorter.print();
+                    data = sorter.getData();
+                    render();
+                });
+            }
+        };
+        timer.schedule(task, 0, 750);
+
     }
 
 }

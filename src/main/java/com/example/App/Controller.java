@@ -2,8 +2,13 @@ package com.example.App;
 
 import com.example.Backend.Sorter;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -15,15 +20,18 @@ import org.jfree.chart.renderer.xy.XYBarRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.awt.*;
+import java.net.URL;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class Controller extends Pane {
+public class Controller implements Initializable {
 
     ArrayList<Integer> data;
+
+    JFreeChart chart;
+
+    boolean forceExit;
 
     @FXML
     private Slider CountSlider;
@@ -40,7 +48,31 @@ public class Controller extends Pane {
     @FXML
     private Pane ViewPane;
 
-    public void initialize() {
+    @FXML
+    private Slider delaySlider;
+
+    @FXML
+    private CheckBox stepCheckBox;
+
+    @FXML
+    private Button stopBtn;
+
+    @FXML
+    private Label delayLabel;
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        CountSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(
+                    ObservableValue<? extends Number> observableValue,
+                    Number oldValue,
+                    Number newValue) {
+                syncNumbersData();
+                render();
+            }
+        });
+        forceExit = false;
         data = new ArrayList<>();
         syncNumbersData();
         render();
@@ -54,12 +86,20 @@ public class Controller extends Pane {
         }
         XYSeriesCollection dataset = new XYSeriesCollection();
         dataset.addSeries(chart_data);
-        JFreeChart chart = ChartFactory.createHistogram("Radix Sort (LSD)", "", "", dataset);
+        chart = ChartFactory.createHistogram("Radix Sort (LSD)", "", "", dataset);
+        chart.getXYPlot().setBackgroundPaint(new Color(255, 255, 255));
         ValueAxis xAxis = chart.getXYPlot().getDomainAxis();
         xAxis.setRange(-0.5, (int) CountSlider.getValue() - 0.5);
+        xAxis.setAxisLineVisible(false);
+        xAxis.setVisible(false);
+        ValueAxis yAxis = chart.getXYPlot().getRangeAxis();
+        yAxis.setRange(0, (int) CountSlider.getValue());
+        yAxis.setAxisLineVisible(false);
+//        yAxis.setVisible(false);
         XYBarRenderer br = (XYBarRenderer) chart.getXYPlot().getRenderer();
-        br.setMargin(.1);
+        br.setMargin(.15);
         chart.getLegend().setVisible(false);
+        chart.getXYPlot().setOutlineVisible(false);
 
         return chart;
     }
@@ -79,17 +119,8 @@ public class Controller extends Pane {
     }
 
     @FXML
-    void countSliderMouseRelease(MouseEvent event) {
-        syncNumbersData();
-        ViewPane.getChildren().clear();
-        ChartViewer viewer = new ChartViewer(createChart());
-        viewer.setPrefSize(ViewPane.getPrefWidth(), ViewPane.getPrefHeight());
-        ViewPane.getChildren().add(viewer);
-    }
-
-
-    @FXML
     void shuffleBtnClicked(MouseEvent event) {
+        syncNumbersData();
         shuffleArray();
         render();
     }
@@ -106,6 +137,7 @@ public class Controller extends Pane {
 
     @FXML
     void sortBtnClicked(MouseEvent event) throws InterruptedException {
+        lockButtons();
         Sorter sorter = new Sorter();
         sorter.sortStart(data);
 
@@ -113,18 +145,57 @@ public class Controller extends Pane {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                if (!sorter.nextStep()) {
+                if (stepCheckBox.isSelected() && !sorter.nextSmallStep() || !stepCheckBox.isSelected() && !sorter.nextStep()) {
+                    unlockButtons();
+                    timer.cancel();
+                } else if (forceExit) {
+                    forceExit = false;
+                    unlockButtons();
+                    sorter.sortStart(data);
+                    syncNumbersData();
                     timer.cancel();
                 }
                 Platform.runLater(() -> {
-                    sorter.print();
+                    // sorter.print();
                     data = sorter.getData();
                     render();
+                    if (stepCheckBox.isSelected() && !sorter.nextSmallStep() || !stepCheckBox.isSelected() && !sorter.nextStep()) {
+                        recolor();
+                    }
                 });
             }
         };
-        timer.schedule(task, 0, 750);
 
+        timer.schedule(task, 0, (int) delaySlider.getValue());
     }
 
+    private void recolor() {
+        XYBarRenderer br = (XYBarRenderer) chart.getXYPlot().getRenderer();
+        br.setSeriesPaint(0, new Color(0, 153, 0));
+    }
+
+    private void lockButtons() {
+        CountSlider.setDisable(true);
+        delaySlider.setDisable(true);
+        delayLabel.setDisable(true);
+        ShuffleBtn.setDisable(true);
+        stepCheckBox.setDisable(true);
+        SortBtn.setDisable(true);
+        stopBtn.setDisable(false);
+    }
+
+    private void unlockButtons() {
+        CountSlider.setDisable(false);
+        delaySlider.setDisable(false);
+        delayLabel.setDisable(false);
+        ShuffleBtn.setDisable(false);
+        stepCheckBox.setDisable(false);
+        SortBtn.setDisable(false);
+        stopBtn.setDisable(true);
+    }
+
+    @FXML
+    void stopBtnClicked(MouseEvent event) {
+        forceExit = true;
+    }
 }

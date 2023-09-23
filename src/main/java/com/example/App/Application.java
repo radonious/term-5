@@ -16,6 +16,7 @@ public class Application extends javafx.application.Application {
     public void start(Stage stage) throws IOException {
         Image icon = new Image(String.valueOf(Application.class.getResource("java.png")));
         stage.getIcons().add(icon);
+
         FXMLLoader loader = new FXMLLoader(Application.class.getResource("index.fxml"));
         Scene scene = new Scene(loader.load(), 1000, 800);
         Controller mainController = loader.getController();

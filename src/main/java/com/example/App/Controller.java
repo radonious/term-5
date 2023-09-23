@@ -95,7 +95,6 @@ public class Controller implements Initializable {
         ValueAxis yAxis = chart.getXYPlot().getRangeAxis();
         yAxis.setRange(0, (int) CountSlider.getValue());
         yAxis.setAxisLineVisible(false);
-//        yAxis.setVisible(false);
         XYBarRenderer br = (XYBarRenderer) chart.getXYPlot().getRenderer();
         br.setMargin(.15);
         chart.getLegend().setVisible(false);
@@ -156,7 +155,6 @@ public class Controller implements Initializable {
                     timer.cancel();
                 }
                 Platform.runLater(() -> {
-                    // sorter.print();
                     data = sorter.getData();
                     render();
                     if (stepCheckBox.isSelected() && !sorter.nextSmallStep() || !stepCheckBox.isSelected() && !sorter.nextStep()) {

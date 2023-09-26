@@ -8,4 +8,6 @@ module com.example.sort {
 
     opens com.example.App to javafx.fxml;
     exports com.example.App;
+    exports com.example.Backend;
+    opens com.example.Backend to javafx.fxml;
 }

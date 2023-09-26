@@ -1,4 +1,4 @@
-package com.example.App;
+package com.example.Backend;
 
 import com.example.Backend.Sorter;
 import javafx.application.Platform;
@@ -27,11 +27,15 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Controller implements Initializable {
 
-    ArrayList<Integer> data;
+    private ArrayList<Integer> data;
 
-    JFreeChart chart;
+    private ArrayList<Pane> pocket_panes;
 
-    boolean forceExit;
+    private JFreeChart chart;
+
+    private boolean force_exit_flag;
+
+    private Sorter sorter;
 
     @FXML
     private Slider CountSlider;
@@ -60,8 +64,43 @@ public class Controller implements Initializable {
     @FXML
     private Label delayLabel;
 
+    @FXML
+    private Pane Pocket0;
+
+    @FXML
+    private Pane Pocket1;
+
+    @FXML
+    private Pane Pocket2;
+
+    @FXML
+    private Pane Pocket3;
+
+    @FXML
+    private Pane Pocket4;
+
+    @FXML
+    private Pane Pocket5;
+
+    @FXML
+    private Pane Pocket6;
+
+    @FXML
+    private Pane Pocket7;
+
+    @FXML
+    private Pane Pocket8;
+
+    @FXML
+    private Pane Pocket9;
+
+    @FXML
+    private CheckBox shuffleCheckBox;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        pocket_panes = new ArrayList<>(10);
+        pocket_panes.addAll(Arrays.asList(Pocket0, Pocket1, Pocket2, Pocket3, Pocket4, Pocket5, Pocket6, Pocket7, Pocket8, Pocket9));
         CountSlider.valueProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(
@@ -72,14 +111,14 @@ public class Controller implements Initializable {
                 render();
             }
         });
-        forceExit = false;
+        force_exit_flag = false;
         data = new ArrayList<>();
+        sorter = new Sorter();
         syncNumbersData();
         render();
     }
 
     private JFreeChart createChart() {
-
         XYSeries chart_data = new XYSeries("");
         for (int i = 0; i < (int) CountSlider.getValue(); ++i) {
             chart_data.add(i, data.get(i));
@@ -110,6 +149,40 @@ public class Controller implements Initializable {
         ViewPane.getChildren().add(viewer);
     }
 
+    private JFreeChart createPocketChart(int num) {
+        XYSeries chart_data = new XYSeries("");
+        ArrayList<Integer> pocket = sorter.getPocket(num);
+        for (int i = 0; i < pocket.size(); ++i) {
+            chart_data.add(i, pocket.get(i));
+        }
+        XYSeriesCollection dataset = new XYSeriesCollection();
+        dataset.addSeries(chart_data);
+        chart = ChartFactory.createHistogram("", "", "", dataset);
+        chart.getXYPlot().setBackgroundPaint(new Color(255, 255, 255));
+        ValueAxis xAxis = chart.getXYPlot().getDomainAxis();
+        xAxis.setAxisLineVisible(false);
+
+        ValueAxis yAxis = chart.getXYPlot().getRangeAxis();
+        yAxis.setRange(0, (int) CountSlider.getValue());
+        yAxis.setAxisLineVisible(false);
+
+        XYBarRenderer br = (XYBarRenderer) chart.getXYPlot().getRenderer();
+        chart.getLegend().setVisible(false);
+        chart.getXYPlot().setOutlineVisible(false);
+
+        return chart;
+    }
+
+    private void renderPockets() {
+        int i = 0;
+        for (Pane pane : pocket_panes) {
+            ChartViewer viewer = new ChartViewer(createPocketChart(i++));
+            viewer.setPrefSize(pane.getPrefWidth(), pane.getPrefHeight());
+            pane.getChildren().clear();
+            pane.getChildren().add(viewer);
+        }
+    }
+
     private void syncNumbersData() {
         if (!data.isEmpty()) data.clear();
         for (int i = 0; i < (int) CountSlider.getValue(); ++i) {
@@ -126,6 +199,11 @@ public class Controller implements Initializable {
 
     private void shuffleArray() {
         Random rnd = ThreadLocalRandom.current();
+        if (shuffleCheckBox.isSelected()) {
+            for (int i = data.size() - 1; i > 0; i--) {
+                data.set(i, rnd.nextInt(data.size()));
+            }
+        }
         for (int i = data.size() - 1; i > 0; i--) {
             int index = rnd.nextInt(i + 1);
             int a = data.get(index);
@@ -137,7 +215,6 @@ public class Controller implements Initializable {
     @FXML
     void sortBtnClicked(MouseEvent event) throws InterruptedException {
         lockButtons();
-        Sorter sorter = new Sorter();
         sorter.sortStart(data);
 
         Timer timer = new Timer();
@@ -147,8 +224,8 @@ public class Controller implements Initializable {
                 if (stepCheckBox.isSelected() && !sorter.nextSmallStep() || !stepCheckBox.isSelected() && !sorter.nextStep()) {
                     unlockButtons();
                     timer.cancel();
-                } else if (forceExit) {
-                    forceExit = false;
+                } else if (force_exit_flag) {
+                    force_exit_flag = false;
                     unlockButtons();
                     sorter.sortStart(data);
                     syncNumbersData();
@@ -156,6 +233,7 @@ public class Controller implements Initializable {
                 }
                 Platform.runLater(() -> {
                     data = sorter.getData();
+                    renderPockets();
                     render();
                     if (stepCheckBox.isSelected() && !sorter.nextSmallStep() || !stepCheckBox.isSelected() && !sorter.nextStep()) {
                         recolor();
@@ -179,6 +257,7 @@ public class Controller implements Initializable {
         ShuffleBtn.setDisable(true);
         stepCheckBox.setDisable(true);
         SortBtn.setDisable(true);
+        shuffleCheckBox.setDisable(true);
         stopBtn.setDisable(false);
     }
 
@@ -189,11 +268,12 @@ public class Controller implements Initializable {
         ShuffleBtn.setDisable(false);
         stepCheckBox.setDisable(false);
         SortBtn.setDisable(false);
+        shuffleCheckBox.setDisable(false);
         stopBtn.setDisable(true);
     }
 
     @FXML
     void stopBtnClicked(MouseEvent event) {
-        forceExit = true;
+        force_exit_flag = true;
     }
 }

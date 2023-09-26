@@ -1,6 +1,7 @@
 package com.example.Backend;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Sorter {
     private ArrayList<Integer> data;
@@ -12,24 +13,24 @@ public class Sorter {
     private int curr_pocket_ind;
     private int curr_number_ind;
 
-    public boolean nextStep() {
-        if (curr_index < max_index) {
-            for (Integer num : data) {
-                pockets.get(getDigit(num, curr_index)).add(num);
-            }
-            data.clear();
-            for (ArrayList<Integer> pocket : pockets) {
-                data.addAll(pocket);
-                pocket.clear();
-            }
-            curr_index++;
-            return true;
-        } else {
-            return false;
-        }
+    private int curr_data_num;
+
+    public Sorter() {
+        initialize();
     }
 
-    public boolean nextSmallStep() {
+    private void initialize() {
+        data = new ArrayList<>();
+        pockets = new ArrayList<>(10);
+        curr_index = 0;
+        max_index = 0;
+        flag = false;
+        curr_data_ind = 0;
+        curr_pocket_ind = 0;
+        curr_number_ind = 0;
+    }
+
+    public boolean nextStep() {
         if (!flag && curr_index < max_index) {
             for (Integer num : data) {
                 pockets.get(getDigit(num, curr_index)).add(num);
@@ -58,16 +59,48 @@ public class Sorter {
         }
     }
 
+    public boolean nextSmallStep() {
+        if (!flag && curr_index < max_index) {
+            int num = data.get(curr_data_num);
+            pockets.get(getDigit(num, curr_index)).add(num);
+            curr_data_num++;
+            if (curr_data_num == data.size()) {
+                curr_data_num = 0;
+                flag = true;
+                curr_index++;
+            }
+            return true;
+        } else if (flag) {
+            if (curr_data_ind >= data.size()) {
+                flag = false;
+                curr_data_ind = 0;
+                curr_pocket_ind = 0;
+                curr_number_ind = 0;
+                for (ArrayList<Integer> pocket : pockets) {
+                    pocket.clear();
+                }
+            } else if (curr_number_ind >= pockets.get(curr_pocket_ind).size()) {
+                curr_pocket_ind++;
+                curr_number_ind = 0;
+            } else {
+                data.set(curr_data_ind++, pockets.get(curr_pocket_ind).get(curr_number_ind++));
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public ArrayList<Integer> getData() {
         return data;
     }
 
+    public ArrayList<Integer> getPocket(int num) {
+        return pockets.get(num);
+    }
+
     public void sortStart(ArrayList<Integer> arr) {
-        flag = false;
-        curr_data_ind = 0;
-        curr_pocket_ind = 0;
-        curr_number_ind = 0;
-        curr_index = 0;
+        initialize();
         max_index = maxCountOfDigits(arr);
         data = arr;
         pockets = new ArrayList<>(10);

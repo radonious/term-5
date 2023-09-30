@@ -1,101 +1,106 @@
 package com.example.Backend;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Sorter {
     private ArrayList<Integer> data;
     private ArrayList<ArrayList<Integer>> pockets;
     private int curr_index;
     private int max_index;
-    private boolean flag;
     private int curr_data_ind;
     private int curr_pocket_ind;
-    private int curr_number_ind;
+    private int curr_pocket_number_ind;
 
-    private int curr_data_num;
+    private boolean is_graph_step;
+    private STEP_RESULT step_status;
+
+    public enum STEP_RESULT {
+        GRAPH,
+        POCKET,
+        FINISH
+    }
 
     public Sorter() {
-        initialize();
+        reset();
     }
 
-    private void initialize() {
+    private void reset() {
+        step_status = STEP_RESULT.POCKET;
         data = new ArrayList<>();
-        pockets = new ArrayList<>(10);
         curr_index = 0;
         max_index = 0;
-        flag = false;
+        is_graph_step = false;
         curr_data_ind = 0;
         curr_pocket_ind = 0;
-        curr_number_ind = 0;
+        curr_pocket_number_ind = 0;
+        pockets = new ArrayList<>(10);
+        for (int i = 0; i < 10; i++) {
+            pockets.add(new ArrayList<>());
+        }
     }
 
-    public boolean nextStep() {
-        if (!flag && curr_index < max_index) {
+    public synchronized void nextStep() {
+        if (!is_graph_step && curr_index < max_index) {
             for (Integer num : data) {
                 pockets.get(getDigit(num, curr_index)).add(num);
             }
-            flag = true;
+            is_graph_step = true;
             curr_index++;
-            return true;
-        } else if (flag) {
-            if (curr_data_ind >= data.size()) {
-                flag = false;
+            step_status = STEP_RESULT.POCKET;
+        } else if (is_graph_step) {
+            if (curr_data_ind >= data.size() || curr_pocket_ind >= pockets.size()) {
+                is_graph_step = false;
                 curr_data_ind = 0;
                 curr_pocket_ind = 0;
-                curr_number_ind = 0;
+                curr_pocket_number_ind = 0;
                 for (ArrayList<Integer> pocket : pockets) {
                     pocket.clear();
                 }
-            } else if (curr_number_ind >= pockets.get(curr_pocket_ind).size()) {
+            } else if (curr_pocket_number_ind >= pockets.get(curr_pocket_ind).size()) {
                 curr_pocket_ind++;
-                curr_number_ind = 0;
-            } else {
-                data.set(curr_data_ind++, pockets.get(curr_pocket_ind).get(curr_number_ind++));
+                curr_pocket_number_ind = 0;
+            }  else {
+                data.set(curr_data_ind++, pockets.get(curr_pocket_ind).get(curr_pocket_number_ind++));
             }
-            return true;
+            step_status = STEP_RESULT.GRAPH;
         } else {
-            return false;
+            step_status = STEP_RESULT.FINISH;
         }
     }
 
-    public boolean nextSmallStep() {
-        System.out.println("NUMBER IND: " + curr_number_ind);
-        System.out.println("POCKET IND: " + curr_pocket_ind);
-        if (!flag && curr_index < max_index) {
-            int num = data.get(curr_data_num);
-            pockets.get(getDigit(num, curr_index)).add(num);
-            curr_data_num++;
-            if (curr_data_num == data.size()) {
-                curr_data_num = 0;
-                flag = true;
+    public synchronized void nextSmallStep() {
+        if (!is_graph_step && curr_index < max_index) {
+            pockets.get(getDigit(data.get(curr_data_ind), curr_index)).add(data.get(curr_data_ind));
+            curr_data_ind++;
+            if (curr_data_ind >= data.size()) {
+                curr_data_ind = 0;
+                is_graph_step = true;
                 curr_index++;
             }
-            return true;
-        } else if (flag) {
-            synchronized (pockets) {
-                if (curr_data_ind >= data.size()) {
-                    flag = false;
-                    curr_data_ind = 0;
-                    curr_pocket_ind = 0;
-                    curr_number_ind = 0;
-                    for (ArrayList<Integer> pocket : pockets) {
-                        pocket.clear();
-                    }
-                } else if (curr_pocket_ind<pockets.size() && curr_number_ind >= pockets.get(curr_pocket_ind).size()) {
-                    curr_pocket_ind++;
-                    curr_number_ind = 0;
-                } else if (curr_pocket_ind < pockets.size()) {
-                    data.set(curr_data_ind++, pockets.get(curr_pocket_ind).get(curr_number_ind++));
-                } else {
-                    curr_pocket_ind = 0;
+            step_status = STEP_RESULT.POCKET;
+        } else if (is_graph_step) {
+            if (curr_data_ind >= data.size() || curr_pocket_ind >= pockets.size()) {
+                is_graph_step = false;
+                curr_data_ind = 0;
+                curr_pocket_ind = 0;
+                curr_pocket_number_ind = 0;
+                for (ArrayList<Integer> pocket : pockets) {
+                    pocket.clear();
                 }
+            } else if (curr_pocket_number_ind >= pockets.get(curr_pocket_ind).size()) {
+                curr_pocket_ind++;
+                curr_pocket_number_ind = 0;
+            } else {
+                data.set(curr_data_ind++, pockets.get(curr_pocket_ind).get(curr_pocket_number_ind++));
             }
-            return true;
+            step_status = STEP_RESULT.GRAPH;
         } else {
-            return false;
+            step_status = STEP_RESULT.FINISH;
         }
+    }
+
+    public STEP_RESULT step_status() {
+        return step_status;
     }
 
     public ArrayList<Integer> getData() {
@@ -109,13 +114,9 @@ public class Sorter {
     }
 
     public void sortStart(ArrayList<Integer> arr) {
-        initialize();
-        max_index = maxCountOfDigits(arr);
+        reset();
         data = arr;
-        pockets = new ArrayList<>(10);
-        for (int i = 0; i < 10; i++) {
-            pockets.add(new ArrayList<>());
-        }
+        max_index = maxCountOfDigits(data);
     }
 
     private int getDigit(int num, int k) {
@@ -142,12 +143,5 @@ public class Sorter {
             res = Math.max(countOfDigits(num), res);
         }
         return res;
-    }
-
-    public void print() {
-        for (Integer num : data) {
-            System.out.printf("%s ", num);
-        }
-        System.out.println();
     }
 }

@@ -1,6 +1,5 @@
 package com.example.Backend;
 
-import com.example.Backend.Sorter;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -116,6 +115,7 @@ public class Controller implements Initializable {
         sorter = new Sorter();
         syncNumbersData();
         render();
+        renderPockets();
     }
 
     private JFreeChart createChart() {
@@ -198,9 +198,12 @@ public class Controller implements Initializable {
 
     @FXML
     void shuffleBtnClicked(MouseEvent event) {
-        syncNumbersData();
-        shuffleArray();
-        render();
+        Platform.runLater(() -> {
+            syncNumbersData();
+            shuffleArray();
+            render();
+        });
+
     }
 
     private void shuffleArray() {
@@ -222,44 +225,45 @@ public class Controller implements Initializable {
     void sortBtnClicked(MouseEvent event) throws InterruptedException {
         lockButtons();
         sorter.sortStart(data);
-
         Timer timer = new Timer();
+
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                if (stepCheckBox.isSelected() && !sorter.nextSmallStep() || !stepCheckBox.isSelected() && !sorter.nextStep()) {
-                    unlockButtons();
-                    timer.cancel();
-                } else if (force_exit_flag) {
-                    force_exit_flag = false;
-                    timer.cancel();
-                    unlockButtons();
-//                    убрать или исправить ошибку
-//                    sorter.sortStart(data);
-                    syncNumbersData();
-                    System.out.println("EXITED");
+                // Step
+                if (stepCheckBox.isSelected()) {
+                    sorter.nextSmallStep();
+                } else {
+                    sorter.nextStep();
                 }
-                else {
+                // Finish/Stop handle
+                if (sorter.step_status() == Sorter.STEP_RESULT.FINISH) {
+                    timer.cancel();
+                    unlockButtons();
+                } else if (force_exit_flag) {
+                    timer.cancel();
+                    force_exit_flag = false;
+                    syncNumbersData();
                     Platform.runLater(() -> {
-                        data = sorter.getData();
                         renderPockets();
                         render();
-//                        здесь исправить nextSmallStep() (отрисовывает 2-ой раз) +
-//                        пробежатся по коду и убрать мусор
-//                    if (stepCheckBox.isSelected() && !sorter.nextSmallStep() || !stepCheckBox.isSelected() && !sorter.nextStep()) {
-//                        recolor();
-//                    }
                     });
+                    unlockButtons();
+                } else {
+                    data = sorter.getData();
+                    if (sorter.step_status() == Sorter.STEP_RESULT.GRAPH) {
+                        Platform.runLater(() -> {
+                            render();
+                        });
+                    } else {
+                        Platform.runLater(() -> {
+                            renderPockets();
+                        });
+                    }
                 }
             }
         };
-
         timer.schedule(task, 0, (int) delaySlider.getValue());
-    }
-
-    private void recolor() {
-        XYBarRenderer br = (XYBarRenderer) chart.getXYPlot().getRenderer();
-        br.setSeriesPaint(0, new Color(0, 153, 0));
     }
 
     private void lockButtons() {

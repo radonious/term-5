@@ -14,7 +14,7 @@
       <Button fx:id="SortBtn" layoutX="930.0" layoutY="950.0" mnemonicParsing="false" onMouseClicked="#sortBtnClicked" prefHeight="25.0" prefWidth="70.0" text="Sort" />
       <Pane fx:id="ViewPane" layoutX="3.0" layoutY="14.0" prefHeight="841.0" prefWidth="997.0" />
       <CheckBox fx:id="stepCheckBox" layoutX="35.0" layoutY="921.0" mnemonicParsing="false" selected="true" text="Render all steps" />
-      <Slider fx:id="delaySlider" layoutX="128.0" layoutY="955.0" majorTickUnit="60.0" max="300.0" min="5.0" prefHeight="14.0" prefWidth="185.0" showTickLabels="true" showTickMarks="true" value="15.0" />
+      <Slider fx:id="delaySlider" layoutX="128.0" layoutY="955.0" majorTickUnit="60.0" max="300.0" min="4" prefHeight="14.0" prefWidth="185.0" showTickLabels="true" showTickMarks="true" value="15.0" />
       <Label fx:id="delayLabel" layoutX="35.0" layoutY="954.0" text="Animation delay" />
       <Button fx:id="stopBtn" disable="true" layoutX="848.0" layoutY="950.0" mnemonicParsing="false" onMouseClicked="#stopBtnClicked" prefHeight="25.0" prefWidth="70.0" text="Stop" />
       <Pane fx:id="Pocket0" layoutX="1048.0" prefHeight="100.0" prefWidth="200.0" />

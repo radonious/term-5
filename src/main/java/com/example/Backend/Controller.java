@@ -120,8 +120,10 @@ public class Controller implements Initializable {
 
     private JFreeChart createChart() {
         XYSeries chart_data = new XYSeries("");
-        for (int i = 0; i < (int) CountSlider.getValue(); ++i) {
-            chart_data.add(i, data.get(i));
+        synchronized (data) {
+            for (int i = 0; i < (int) CountSlider.getValue(); ++i) {
+                chart_data.add(i, data.get(i));
+            }
         }
         XYSeriesCollection dataset = new XYSeriesCollection();
         dataset.addSeries(chart_data);
@@ -152,8 +154,10 @@ public class Controller implements Initializable {
     private JFreeChart createPocketChart(int num) {
         XYSeries chart_data = new XYSeries("");
         ArrayList<Integer> pocket = sorter.getPocket(num);
-        for (int i = 0; i < pocket.size(); ++i) {
-            chart_data.add(i, pocket.get(i));
+        synchronized (pocket) {
+            for (int i = 0; i < pocket.size(); ++i) {
+                chart_data.add(i, pocket.get(i));
+            }
         }
         XYSeriesCollection dataset = new XYSeriesCollection();
         dataset.addSeries(chart_data);
@@ -184,9 +188,11 @@ public class Controller implements Initializable {
     }
 
     private void syncNumbersData() {
-        if (!data.isEmpty()) data.clear();
-        for (int i = 0; i < (int) CountSlider.getValue(); ++i) {
-            data.add(i);
+        synchronized (data) {
+            if (!data.isEmpty()) data.clear();
+            for (int i = 0; i < (int) CountSlider.getValue(); ++i) {
+                data.add(i);
+            }
         }
     }
 
@@ -226,19 +232,25 @@ public class Controller implements Initializable {
                     timer.cancel();
                 } else if (force_exit_flag) {
                     force_exit_flag = false;
-                    unlockButtons();
-                    sorter.sortStart(data);
-                    syncNumbersData();
                     timer.cancel();
+                    unlockButtons();
+//                    убрать или исправить ошибку
+//                    sorter.sortStart(data);
+                    syncNumbersData();
+                    System.out.println("EXITED");
                 }
-                Platform.runLater(() -> {
-                    data = sorter.getData();
-                    renderPockets();
-                    render();
-                    if (stepCheckBox.isSelected() && !sorter.nextSmallStep() || !stepCheckBox.isSelected() && !sorter.nextStep()) {
-                        recolor();
-                    }
-                });
+                else {
+                    Platform.runLater(() -> {
+                        data = sorter.getData();
+                        renderPockets();
+                        render();
+//                        здесь исправить nextSmallStep() (отрисовывает 2-ой раз) +
+//                        пробежатся по коду и убрать мусор
+//                    if (stepCheckBox.isSelected() && !sorter.nextSmallStep() || !stepCheckBox.isSelected() && !sorter.nextStep()) {
+//                        recolor();
+//                    }
+                    });
+                }
             }
         };
 

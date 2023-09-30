@@ -2,6 +2,7 @@ package com.example.Backend;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Sorter {
     private ArrayList<Integer> data;
@@ -60,6 +61,8 @@ public class Sorter {
     }
 
     public boolean nextSmallStep() {
+        System.out.println("NUMBER IND: " + curr_number_ind);
+        System.out.println("POCKET IND: " + curr_pocket_ind);
         if (!flag && curr_index < max_index) {
             int num = data.get(curr_data_num);
             pockets.get(getDigit(num, curr_index)).add(num);
@@ -71,19 +74,23 @@ public class Sorter {
             }
             return true;
         } else if (flag) {
-            if (curr_data_ind >= data.size()) {
-                flag = false;
-                curr_data_ind = 0;
-                curr_pocket_ind = 0;
-                curr_number_ind = 0;
-                for (ArrayList<Integer> pocket : pockets) {
-                    pocket.clear();
+            synchronized (pockets) {
+                if (curr_data_ind >= data.size()) {
+                    flag = false;
+                    curr_data_ind = 0;
+                    curr_pocket_ind = 0;
+                    curr_number_ind = 0;
+                    for (ArrayList<Integer> pocket : pockets) {
+                        pocket.clear();
+                    }
+                } else if (curr_pocket_ind<pockets.size() && curr_number_ind >= pockets.get(curr_pocket_ind).size()) {
+                    curr_pocket_ind++;
+                    curr_number_ind = 0;
+                } else if (curr_pocket_ind < pockets.size()) {
+                    data.set(curr_data_ind++, pockets.get(curr_pocket_ind).get(curr_number_ind++));
+                } else {
+                    curr_pocket_ind = 0;
                 }
-            } else if (curr_number_ind >= pockets.get(curr_pocket_ind).size()) {
-                curr_pocket_ind++;
-                curr_number_ind = 0;
-            } else {
-                data.set(curr_data_ind++, pockets.get(curr_pocket_ind).get(curr_number_ind++));
             }
             return true;
         } else {
@@ -96,7 +103,9 @@ public class Sorter {
     }
 
     public ArrayList<Integer> getPocket(int num) {
-        return pockets.get(num);
+        synchronized (pockets) {
+            return pockets.get(num);
+        }
     }
 
     public void sortStart(ArrayList<Integer> arr) {

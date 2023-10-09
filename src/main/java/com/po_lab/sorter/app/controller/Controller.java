@@ -3,7 +3,11 @@ package com.po_lab.sorter.app.controller;
 import com.po_lab.sorter.app.model.sorter.Sorter;
 import com.po_lab.sorter.app.utils.DataProcessor;
 import com.po_lab.sorter.app.model.chart.NumberBarChart;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventType;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.chart.XYChart;
@@ -11,6 +15,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 
@@ -116,7 +121,12 @@ public class Controller implements Initializable {
                 } else if (forceExitFlag) {
                     timer.cancel();
                     forceExitFlag = false;
-                    countSlider.setValue(countSlider.getValue());
+                    Platform.runLater(()->{
+                        countSlider.setValue(countSlider.getValue()+1);
+                        countSlider.setValue(countSlider.getValue()-1);
+                        chartsDataList.forEach(List::clear);
+                    });
+
                     setControlsDisable(false);
                 }
             }
@@ -163,6 +173,7 @@ public class Controller implements Initializable {
 
     private void initSliders() {
         this.countSlider.valueProperty().addListener((observableValue, oldValue, newValue) -> {
+            System.out.println("ADSASD");
             if (mainChart.isDataShuffled()) {
                 DataProcessor.sortData(mainChart.getyValueList(), Integer::compareTo);
                 mainChart.setShuffledState(false);

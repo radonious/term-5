@@ -322,7 +322,9 @@ public class NumberBarChart extends BarChart<String,Number> {
                 } else {
                     if (!this.isDataShuffled()) {
                         DataProcessor.deleteLastData(this.dataList,change.getRemovedSize());
-                        DataProcessor.addOrderedData(this.dataList,change.getAddedSize(),this.dataCreator);
+                        change.getAddedSubList().forEach(num->{
+                            this.dataList.add(new Data<>(String.valueOf(this.dataList.size()-1),num));
+                        });
                     } else {
                         DataProcessor.setDataFromList(this.yValueList, this.dataList, this.dataSetter);
                     }

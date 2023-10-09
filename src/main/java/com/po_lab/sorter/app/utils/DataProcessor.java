@@ -12,6 +12,14 @@ import java.util.stream.IntStream;
 
 public interface DataProcessor {
 
+//    static <T,U> void addData(List<T> sourceList, List<U> targetList,MultiFunction<Integer,Object[],T> creator,
+//                              Object... newInstanceParams) {
+//        List<T> newDataList = IntStream
+//                .range(sourceList.size(), sourceList.size() + targetList.size())
+//                .mapToObj(num -> creator.apply(num,newInstanceParams))
+//                .collect(Collectors.toCollection(FXCollections::observableArrayList));
+//    }
+
     static <T> void addOrderedData(List<T> dataList,
                                    int dataNum,
                                    BiFunction<Integer,Object[],T> creator,

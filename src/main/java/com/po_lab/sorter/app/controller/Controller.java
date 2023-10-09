@@ -117,16 +117,17 @@ public class Controller implements Initializable {
                 // Finish/Stop handle
                 if (sorter.getStepStatus() == Sorter.STEP_RESULT.FINISH) {
                     timer.cancel();
+                    mainChart.setShuffledState(false);
                     setControlsDisable(false);
                 } else if (forceExitFlag) {
                     timer.cancel();
                     forceExitFlag = false;
                     Platform.runLater(()->{
-                        countSlider.setValue(countSlider.getValue()+1);
-                        countSlider.setValue(countSlider.getValue()-1);
+                        DataProcessor.deleteLastData(mainChart.getyValueList(),(int)countSlider.getValue());
+                        DataProcessor.addOrderedData(mainChart.getyValueList(),(int)countSlider.getValue(),numCreator);
+                        mainChart.setShuffledState(false);
                         chartsDataList.forEach(List::clear);
                     });
-
                     setControlsDisable(false);
                 }
             }
@@ -173,7 +174,6 @@ public class Controller implements Initializable {
 
     private void initSliders() {
         this.countSlider.valueProperty().addListener((observableValue, oldValue, newValue) -> {
-            System.out.println("ADSASD");
             if (mainChart.isDataShuffled()) {
                 DataProcessor.sortData(mainChart.getyValueList(), Integer::compareTo);
                 mainChart.setShuffledState(false);

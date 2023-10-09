@@ -257,7 +257,7 @@ public class NumberBarChart extends BarChart<String,Number> {
         DoubleBinding tickUnitBinding = Bindings.createDoubleBinding(
                 ()->{
                     double tickUnit = 1;
-                    int numOfTicks = 25;
+                    int numOfTicks = 5;
                     if (dataList.size()>0) {
                         tickUnit = dataList.size()/numOfTicks+1;
                     }
@@ -320,12 +320,12 @@ public class NumberBarChart extends BarChart<String,Number> {
                 } else if (change.wasUpdated()) {
                     System.out.println("UPDATED1");
                 } else {
-                    if (!this.isDataShuffled()) {
+                    if (change.getRemovedSize() != change.getAddedSize()) {
                         DataProcessor.deleteLastData(this.dataList,change.getRemovedSize());
                         change.getAddedSubList().forEach(num->{
                             this.dataList.add(new Data<>(String.valueOf(this.dataList.size()-1),num));
                         });
-                    } else {
+                    } else  {
                         DataProcessor.setDataFromList(this.yValueList, this.dataList, this.dataSetter);
                     }
                 }
@@ -339,6 +339,7 @@ public class NumberBarChart extends BarChart<String,Number> {
         this.yAxis.setAutoRanging(false);
         this.yAxis.setVisible(false);
         this.yAxis.setMinorTickVisible(false);
+        this.yAxis.setTickMarkVisible(false);
         this.setVerticalGridLinesVisible(false);
         this.setLegendVisible(false);
         this.setAnimated(false);

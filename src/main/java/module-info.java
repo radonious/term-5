@@ -1,13 +1,9 @@
-module com.example.sort {
+module com.po_lab.sorter.app {
     requires javafx.controls;
     requires javafx.fxml;
-    requires jfreechart;
-    requires jfreechart.fx;
-    requires java.desktop;
 
 
-    opens com.example.App to javafx.fxml;
-    exports com.example.App;
-    exports com.example.Backend;
-    opens com.example.Backend to javafx.fxml;
+    opens com.po_lab.sorter.app to javafx.fxml;
+    exports com.po_lab.sorter.app;
+    opens com.po_lab.sorter.app.controller to javafx.fxml;
 }

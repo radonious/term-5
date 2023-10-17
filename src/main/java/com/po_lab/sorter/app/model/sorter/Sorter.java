@@ -34,7 +34,7 @@ public class Sorter {
         if (!isGraphStep && curDigitIndexCopy < maxDigits) {
             Platform.runLater(() -> {
                 int number = data.get(curDataIndexCopy);
-                pockets.get(getDigit(number,curDigitIndexCopy)).add(number);
+                pockets.get(getDigit(number, curDigitIndexCopy, pockets.size())).add(number);
             });
             curDataIndex++;
             if (curDataIndex >= data.size()) {
@@ -80,11 +80,15 @@ public class Sorter {
         }
     }
 
+    public List<List<Integer>> getPocketList() {
+        return pockets;
+    }
+
     public void setStartState(List<Integer> arr, List<List<Integer>> pocketsList) {
         reset();
         data = arr;
         pockets = pocketsList;
-        maxDigits = maxCountOfDigits(data);
+        maxDigits = maxCountOfDigits(data, pocketsList.size());
     }
 
     private void reset() {
@@ -97,28 +101,28 @@ public class Sorter {
         isGraphStep = false;
     }
 
-    private int getDigit(int num, int k) {
+    private int getDigit(int num, int k, int base) {
         num = Math.abs(num);
         int cur = 0;
         while (num != 0 && cur++ < k) {
-            num /= 10;
+            num /= base;
         }
-        return num % 10;
+        return num % base;
     }
 
-    private int countOfDigits(int num) {
+    private int countOfDigits(int num, int base) {
         int res = num == 0 ? 1 : 0;
         while (num != 0) {
-            num /= 10;
+            num /= base;
             ++res;
         }
         return res;
     }
 
-    private int maxCountOfDigits(List<Integer> arr) {
+    private int maxCountOfDigits(List<Integer> arr, int base) {
         int res = 0;
         for (int num : arr) {
-            res = Math.max(countOfDigits(num), res);
+            res = Math.max(countOfDigits(num,base), res);
         }
         return res;
     }

@@ -1,6 +1,7 @@
 package com.po_lab.sorter.app;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -14,7 +15,10 @@ public class App extends Application {
 
         FXMLLoader loader = new FXMLLoader(App.class.getResource("view/appView.fxml"));
         Scene scene = new Scene(loader.load(), 1260, 1000);
-        Controller mainController = loader.getController();
+        stage.setOnCloseRequest(windowEvent -> {
+            Platform.exit();
+            System.exit(0);
+        });
 
         stage.setTitle("Sorting Visualization");
         stage.setScene(scene);

@@ -24,6 +24,7 @@ public class NumberBarChart extends BarChart<String,Number> {
     private DoubleProperty gapBetweenBarsProperty;
     private BooleanProperty isDataEmptyProperty;
     private BooleanProperty isDataShuffledProperty;
+    private IntegerProperty numberBaseProperty;
     private CategoryAxis xAxis;
     private final List<String> categoriesData;
     private Method getCategoriesData;
@@ -104,6 +105,18 @@ public class NumberBarChart extends BarChart<String,Number> {
         this.isDataShuffledProperty.set(shuffledState);
     }
 
+    public int getNumberBase() {
+        return numberBaseProperty.get();
+    }
+
+    public IntegerProperty numberBaseProperty() {
+        return numberBaseProperty;
+    }
+
+    public void setNumberBase(int numberBaseProperty) {
+        this.numberBaseProperty.set(numberBaseProperty);
+    }
+
     public CategoryAxis getCategoryAxis() {
         return (CategoryAxis)this.getXAxis();
     }
@@ -135,7 +148,7 @@ public class NumberBarChart extends BarChart<String,Number> {
         this.dataList.setAll(newDataList);
     }
 
-    public ObservableList<Integer> getyValueList() {
+    public ObservableList<Integer> getYValueList() {
         return this.yValueList;
     }
 
@@ -191,6 +204,7 @@ public class NumberBarChart extends BarChart<String,Number> {
     private void initDataProperties() {
         this.barWidthProperty = new SimpleDoubleProperty();
         this.gapBetweenBarsProperty = new SimpleDoubleProperty();
+        this.numberBaseProperty = new SimpleIntegerProperty(10);
         this.isDataEmptyProperty = new SimpleBooleanProperty();
         this.isDataShuffledProperty = new SimpleBooleanProperty(false);
         BooleanBinding isDataEmptyBinding = Bindings.isEmpty(this.getData().get(0).getData());
@@ -229,40 +243,38 @@ public class NumberBarChart extends BarChart<String,Number> {
         DoubleBinding upperBoundYAxisBind = Bindings.createDoubleBinding(
                 () -> {
                     double maxYValue = 0.0;
-                    if (this.dataList.size()>0) {
-                        maxYValue = this.dataList
+                    if (this.yValueList.size()>0) {
+                        maxYValue = this.yValueList
                                 .stream()
-                                .max(Comparator.comparingDouble(data -> data.getYValue().doubleValue()))
+                                .max(Comparator.comparingInt(data->data))
                                 .get()
-                                .getYValue()
                                 .doubleValue();
                     }
                     return maxYValue+1;
-                }, this.dataList
+                }, this.yValueList
         );
         DoubleBinding lowerBoundYAxisBind = Bindings.createDoubleBinding(
-                ()->{
+                ()-> {
                     double minYValue = 0.0;
-                    if (this.dataList.size()>0) {
-                        minYValue = this.dataList
+                    if (this.yValueList.size()>0) {
+                        minYValue = this.yValueList
                                 .stream()
-                                .min(Comparator.comparingDouble(data -> data.getYValue().doubleValue()))
+                                .min(Comparator.comparingInt(data->data))
                                 .get()
-                                .getYValue()
                                 .doubleValue();
                     }
                     return minYValue;
-                }, this.dataList
+                }, this.yValueList
         );
         DoubleBinding tickUnitBinding = Bindings.createDoubleBinding(
                 ()->{
                     double tickUnit = 1;
                     int numOfTicks = 5;
                     if (dataList.size()>0) {
-                        tickUnit = dataList.size()/numOfTicks+1;
+                        tickUnit = (int)yAxis.getUpperBound()/numOfTicks+1;
                     }
                     return tickUnit;
-                }, this.dataList
+                }, this.yValueList
         );
         this.yAxis.upperBoundProperty().bind(upperBoundYAxisBind);
         this.yAxis.lowerBoundProperty().bind(lowerBoundYAxisBind);
@@ -275,7 +287,7 @@ public class NumberBarChart extends BarChart<String,Number> {
     }
 
     private void initDataHandlers() {
-        this.dataCreator = (num, newInstanceParams) -> new Data<>(String.valueOf(num),num);
+        this.dataCreator = (num, newInstanceParams) -> new Data<>(String.valueOf(this.dataList.size()),num);
         this.dataSetter = (num, data) -> data.setYValue(num);
         this.dataComparator = (data1, data2) -> {
             data1.setYValue(Integer.valueOf(data1.getXValue()));
@@ -321,14 +333,21 @@ public class NumberBarChart extends BarChart<String,Number> {
                     System.out.println("UPDATED1");
                 } else {
                     if (change.getRemovedSize() != change.getAddedSize()) {
-                        DataProcessor.deleteLastData(this.dataList,change.getRemovedSize());
-                        change.getAddedSubList().forEach(num->{
-                            this.dataList.add(new Data<>(String.valueOf(this.dataList.size()-1),num));
-                        });
+                        DataProcessor.deleteLastData(this.dataList, change.getRemovedSize());
+                        DataProcessor.addDataFromList(
+                                this.dataList,
+                                (List<Integer>)change.getAddedSubList(),
+                                this.dataCreator
+                        );
                     } else  {
                         DataProcessor.setDataFromList(this.yValueList, this.dataList, this.dataSetter);
                     }
                 }
+            }
+        });
+        this.numberBaseProperty.addListener((observable,oldValue,newValue)->{
+            if (!newValue.equals(oldValue)) {
+                DataProcessor.changeListBaseNum(this.yValueList, oldValue.intValue(), newValue.intValue());
             }
         });
     }

@@ -5,17 +5,10 @@ import com.po_lab.sorter.app.utils.DataProcessor;
 import com.po_lab.sorter.app.model.chart.NumberBarChart;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.Event;
-import javafx.event.EventType;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.input.DragEvent;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 
@@ -24,6 +17,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 public class Controller implements Initializable {
@@ -32,52 +26,55 @@ public class Controller implements Initializable {
     private int animationDelay;
     private List<Integer> data;
     private List<Pane> pocketPaneList;
-    private List<List<Integer>> chartsDataList;
+    private List<NumberBarChart> chartsList;
     private Sorter sorter;
     private NumberBarChart mainChart;
     private BiFunction<Integer,Object[],Integer> numCreator;
-    private Comparator<XYChart.Data<String,Number>> comparator;
-    private Consumer<ObservableList<XYChart.Data<String,Number>>> shuffler;
+    private Consumer<List<Integer>> shuffler, altShuffler;
     @FXML
-    private Slider countSlider;
-    @FXML
-    private Pane MainPane;
-    @FXML
-    private Button ShuffleBtn;
-    @FXML
-    private Button SortBtn;
+    private Pane mainPane;
     @FXML
     private Pane viewPane;
     @FXML
-    private Slider delaySlider;
+    private Pane pocket0;
     @FXML
-    private CheckBox stepCheckBox;
+    private Pane pocket1;
     @FXML
-    private Button stopBtn;
+    private Pane pocket2;
+    @FXML
+    private Pane pocket3;
+    @FXML
+    private Pane pocket4;
+    @FXML
+    private Pane pocket5;
+    @FXML
+    private Pane pocket6;
+    @FXML
+    private Pane pocket7;
+    @FXML
+    private Pane pocket8;
+    @FXML
+    private Pane pocket9;
     @FXML
     private Label delayLabel;
     @FXML
-    private Pane Pocket0;
-    @FXML
-    private Pane Pocket1;
-    @FXML
-    private Pane Pocket2;
-    @FXML
-    private Pane Pocket3;
-    @FXML
-    private Pane Pocket4;
-    @FXML
-    private Pane Pocket5;
-    @FXML
-    private Pane Pocket6;
-    @FXML
-    private Pane Pocket7;
-    @FXML
-    private Pane Pocket8;
-    @FXML
-    private Pane Pocket9;
+    private CheckBox stepCheckBox;
     @FXML
     private CheckBox shuffleCheckBox;
+    @FXML
+    private CheckBox recalcCheckBox;
+    @FXML
+    private Button shuffleBtn;
+    @FXML
+    private Button sortBtn;
+    @FXML
+    private Button stopBtn;
+    @FXML
+    private Slider countSlider;
+    @FXML
+    private Slider delaySlider;
+    @FXML
+    private Spinner<Integer> pocketSpinner;
 
     private NumberBarChart createChart() {
         return new NumberBarChart();
@@ -85,7 +82,11 @@ public class Controller implements Initializable {
 
     private void initCharts() {
         this.mainChart = createChart();
-        DataProcessor.addOrderedData(this.mainChart.getyValueList(), (int) this.countSlider.getValue(), (num, newInstanceParams) -> num);
+        DataProcessor.addOrderedData(
+                this.mainChart.getYValueList(),
+                (int)this.countSlider.getValue(),
+                this.numCreator
+        );
         this.mainChart.setPrefSize(viewPane.getPrefWidth(), viewPane.getPrefHeight());
         this.viewPane.getChildren().add(mainChart);
         this.pocketPaneList.forEach(pane -> {
@@ -100,15 +101,23 @@ public class Controller implements Initializable {
     @FXML
     void shuffleBtnClicked(MouseEvent event) {
         this.mainChart.setShuffledState(true);
-        DataProcessor.shuffleData(mainChart.getyValueList(), Collections::shuffle);
+        if (!shuffleCheckBox.isSelected()) {
+            DataProcessor.shuffleData(mainChart.getYValueList(), this.shuffler);
+        } else {
+            DataProcessor.shuffleData(mainChart.getYValueList(),this.altShuffler);
+        }
     }
 
     @FXML
     void sortBtnClicked(MouseEvent event) {
         setControlsDisable(true);
-        sorter.setStartState(this.mainChart.getyValueList(), this.chartsDataList);
+        sorter.setStartState(
+                this.mainChart.getYValueList(),
+                this.chartsList.stream()
+                        .limit(pocketSpinner.getValue())
+                        .map(NumberBarChart::getYValueList)
+                        .collect(Collectors.toList()));
         Timer timer = new Timer();
-
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
@@ -123,10 +132,16 @@ public class Controller implements Initializable {
                     timer.cancel();
                     forceExitFlag = false;
                     Platform.runLater(()->{
-                        DataProcessor.deleteLastData(mainChart.getyValueList(),(int)countSlider.getValue());
-                        DataProcessor.addOrderedData(mainChart.getyValueList(),(int)countSlider.getValue(),numCreator);
+                        DataProcessor.deleteLastData(mainChart.getYValueList(),(int)countSlider.getValue());
+                        DataProcessor.addOrderedBasedData(
+                                mainChart.getYValueList(),
+                                (int)countSlider.getValue(),
+                                10,
+                                mainChart.getNumberBase(),
+                                numCreator
+                        );
                         mainChart.setShuffledState(false);
-                        chartsDataList.forEach(List::clear);
+                        sorter.getPocketList().forEach(List::clear);
                     });
                     setControlsDisable(false);
                 }
@@ -137,14 +152,16 @@ public class Controller implements Initializable {
     }
 
     private void setControlsDisable(boolean state) {
-        countSlider.setDisable(state);
-        delaySlider.setDisable(state);
-        delayLabel.setDisable(state);
-        ShuffleBtn.setDisable(state);
-        stepCheckBox.setDisable(state);
-        SortBtn.setDisable(state);
-        shuffleCheckBox.setDisable(state);
+        shuffleBtn.setDisable(state);
+        sortBtn.setDisable(state);
         stopBtn.setDisable(!state);
+        stepCheckBox.setDisable(state);
+        shuffleCheckBox.setDisable(state);
+        recalcCheckBox.setDisable(state);
+        delaySlider.setDisable(state);
+        countSlider.setDisable(state);
+        pocketSpinner.setDisable(state);
+        delayLabel.setDisable(state);
     }
 
     @FXML
@@ -154,32 +171,29 @@ public class Controller implements Initializable {
 
     private void initInterfaces() {
         this.numCreator = (num, objectParams) -> num;
-        this.comparator = (data1, data2) -> {
-            data1.setYValue(Integer.valueOf(data1.getXValue()));
-            data2.setYValue(Integer.valueOf(data2.getXValue()));
-            return 0;
-        };
-        this.shuffler = data -> {
-            Random random = ThreadLocalRandom.current();
-            for (int curIndex = mainChart.getDataList().size() - 1; curIndex > 0; curIndex--) {
-                int randIndex = random.nextInt(curIndex + 1);
-                XYChart.Data<String,Number> curData = mainChart.getDataList().get(curIndex);
-                XYChart.Data<String,Number> randData = mainChart.getDataList().get(randIndex);
-                double tmpVal = curData.getYValue().doubleValue();
-                curData.setYValue(randData.getYValue());
-                randData.setYValue(tmpVal);
-            }
+        this.shuffler = Collections::shuffle;
+        this.altShuffler = numList -> {
+            numList.replaceAll(integer -> {
+                int newRandNum = ThreadLocalRandom.current().nextInt((int)countSlider.getValue());
+                return DataProcessor.changeNumBase(newRandNum,10,mainChart.getNumberBase());
+            });
         };
     }
 
     private void initSliders() {
         this.countSlider.valueProperty().addListener((observableValue, oldValue, newValue) -> {
             if (mainChart.isDataShuffled()) {
-                DataProcessor.sortData(mainChart.getyValueList(), Integer::compareTo);
+                DataProcessor.sortData(mainChart.getYValueList(), Integer::compareTo);
                 mainChart.setShuffledState(false);
             }
             if (!oldValue.equals(newValue)) {
-                DataProcessor.resizeDataNum(this.mainChart.getyValueList(), newValue, this.numCreator);
+                DataProcessor.resizeBasedDataNum(
+                        this.mainChart.getYValueList(),
+                        newValue,
+                        10,
+                        mainChart.getNumberBase(),
+                        this.numCreator
+                );
             }
         });
         this.delaySlider.valueProperty().addListener(((observableValue, oldValue, newValue) -> {
@@ -189,24 +203,54 @@ public class Controller implements Initializable {
         }));
     }
 
+    private void initSpinner() {
+        pocketSpinner.valueProperty().addListener((observableValue, oldValue, newValue) -> {
+            if (newValue<oldValue) {
+                this.chartsList
+                        .stream()
+                        .skip(newValue)
+                        .forEach(chart->chart.setVisible(false));
+            } else {
+                this.chartsList
+                        .stream()
+                        .skip(oldValue)
+                        .limit(newValue-oldValue)
+                        .forEach(chart->chart.setVisible(true));
+            }
+            if (recalcCheckBox.isSelected()) {
+                mainChart.setNumberBase(newValue);
+            }
+        });
+    }
+
+    public void initCheckBox() {
+        recalcCheckBox.selectedProperty().addListener((observable,oldValue,newValue)->{
+            if (!newValue) {
+                mainChart.setNumberBase(10);
+            } else {
+                mainChart.setNumberBase(pocketSpinner.getValue());
+            }
+        });
+    }
+
     private void initPocketPaneList() {
         this.pocketPaneList = new ArrayList<>(10);
         this.pocketPaneList.addAll(
                 Arrays.asList(
-                        Pocket0,Pocket1,
-                        Pocket2,Pocket3,
-                        Pocket4,Pocket5,
-                        Pocket6,Pocket7,
-                        Pocket8,Pocket9
+                        pocket0, pocket1,
+                        pocket2, pocket3,
+                        pocket4,pocket5,
+                        pocket6,pocket7,
+                        pocket8,pocket9
                 )
         );
     }
 
-    private void initChartsDataList() {
-        this.chartsDataList = pocketPaneList
+    private void initChartsList() {
+        this.chartsList = pocketPaneList
                 .stream()
-                .map(pane->((NumberBarChart)pane.getChildren().get(0)).getyValueList())
-                .collect(Collectors.toCollection(ArrayList::new));
+                .map(pane->(NumberBarChart)pane.getChildren().get(0))
+                .toList();
     }
 
 
@@ -214,9 +258,11 @@ public class Controller implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         initInterfaces();
         initSliders();
+        initSpinner();
+        initCheckBox();
         initPocketPaneList();
         initCharts();
-        initChartsDataList();
+        initChartsList();
         forceExitFlag = false;
         sorter = new Sorter();
     }

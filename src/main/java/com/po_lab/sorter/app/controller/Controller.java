@@ -4,10 +4,8 @@ import com.po_lab.sorter.app.model.sorter.Sorter;
 import com.po_lab.sorter.app.utils.DataProcessor;
 import com.po_lab.sorter.app.model.chart.NumberBarChart;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -17,7 +15,6 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 public class Controller implements Initializable {
@@ -57,8 +54,6 @@ public class Controller implements Initializable {
     private Pane pocket9;
     @FXML
     private Label delayLabel;
-    @FXML
-    private CheckBox stepCheckBox;
     @FXML
     private CheckBox shuffleCheckBox;
     @FXML
@@ -155,7 +150,6 @@ public class Controller implements Initializable {
         shuffleBtn.setDisable(state);
         sortBtn.setDisable(state);
         stopBtn.setDisable(!state);
-        stepCheckBox.setDisable(state);
         shuffleCheckBox.setDisable(state);
         recalcCheckBox.setDisable(state);
         delaySlider.setDisable(state);

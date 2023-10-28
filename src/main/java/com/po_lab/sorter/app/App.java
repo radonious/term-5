@@ -5,7 +5,6 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import com.po_lab.sorter.app.controller.Controller;
 
 import java.io.IOException;
 

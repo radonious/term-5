@@ -1,0 +1,7 @@
+org.example.MyTestClass
+5
+i1=-123
+i2=999
+i3=777
+s1=TEST STRING
+s2=IM HERE

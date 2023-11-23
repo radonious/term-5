@@ -4,9 +4,9 @@ public class MyTestClass {
     @RxField(info = "", name = "int1")
     public Integer i1;
     @RxField(info = "", name = "int2")
-    private Integer i2;
+    private int i2;
     @RxField(info = "", name = "int3")
-    protected Integer i3;
+    protected double i3;
 
     @RxField(info = "", name = "str1")
     public String s1;
@@ -38,25 +38,5 @@ public class MyTestClass {
                         "\nnot1 = " + not1 +
                         "\nnot2 = " + not2
         );
-    }
-
-    public void i1(Integer val) {
-        i1 = val;
-    }
-
-    public void i2(Integer val) {
-        i2 = val;
-    }
-
-    public void i3(Integer val) {
-        i3 = val;
-    }
-
-    public void s1(String val) {
-        s1 = val;
-    }
-
-    public void s2(String val) {
-        s2 = val;
     }
 }

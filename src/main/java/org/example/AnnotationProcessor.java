@@ -71,22 +71,23 @@ public class AnnotationProcessor {
         Class<?> clazz = Class.forName(className); // Получаем тип класа по имени
         Object obj = clazz.newInstance(); // Создаем экземпляр
 
-        Method[] methods = clazz.getDeclaredMethods(); // Получаем методы типа класса
+        Field[] fields = clazz.getDeclaredFields(); // Получаем поля класса
 
-        for (Method method : methods) {
-            // Ищем метод с названием имеющейся переменной, т.е. mutator или setter
-            if (fieldsValues.get(method.getName()) != null) {
-                Class<?>[] params = method.getParameterTypes();
-                if (params.length == 1) { // Проверяем что это точно mutator/setter
-                    if (params[0] == Integer.class) { // Проверяем принимаемый методом тип
-                        // Кастим строку к нему если нужно
-                        method.invoke(obj, Integer.parseInt(fieldsValues.get(method.getName())));
-                    } else if (params[0] == String.class) {
-                        method.invoke(obj, fieldsValues.get(method.getName()));
-                    }
+        for (Field field : fields) {
+            // Если поле имеет аннотацию и данные о нем хранятся в HashMap
+            if (field.isAnnotationPresent(RxField.class) && fieldsValues.get(field.getName()) != null) {
+                field.setAccessible(true); // Открываем доступ к данным поля
+                if (field.getType() == Integer.class || field.getType() == int.class) {
+                    field.set(obj, Integer.parseInt(fieldsValues.get(field.getName())));
+                } else if (field.getType() == Double.class || field.getType() == double.class) {
+                    field.set(obj,Double.parseDouble(fieldsValues.get(field.getName())));
+                } else if (field.getType() == String.class) {
+                    field.set(obj,fieldsValues.get(field.getName()));
                 }
+                field.setAccessible(false); // Закрываем доступ к данным поля
             }
         }
+
         return obj;
     }
 }
